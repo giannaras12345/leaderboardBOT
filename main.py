@@ -78,30 +78,20 @@ class LeaderboardView(discord.ui.View):
 @client.event
 async def on_ready():
     print(f"Bot connected as {client.user}")
-    send_leaderboards.start()  # ✅ start loop
+    send_force_trigger.start()  # ✅ start the new loop
 
-# ✅ Hourly task to send leaderboards
+# ✅ New hourly task that just sends "!forceleaderboard"
 @tasks.loop(hours=1)
-async def send_leaderboards():
-    print("Sending hourly leaderboards...")
+async def send_force_trigger():
+    print("Triggering hourly !forceleaderboard...")
     channel = client.get_channel(CHANNEL_ID)
-    if not channel:
+    if channel:
+        await channel.send("!forceleaderboard")
+    else:
         print(f"Channel {CHANNEL_ID} not found.")
-        return
-
-    all_data = scraper.scrape_all_categories()
-
-    for category, players in all_data.items():
-        view = LeaderboardView(category, players)
-        embed = view.get_embed(0)
-        await channel.send(embed=embed, view=view)
-
 
 @client.event
 async def on_message(message):
-    if message.author.bot:
-        return
-
     if message.content.strip().lower() == "!forceleaderboard":
         channel = message.channel
         all_data = scraper.scrape_all_categories()
@@ -110,7 +100,6 @@ async def on_message(message):
             view = LeaderboardView(category, players)
             embed = view.get_embed(0)
             await channel.send(embed=embed, view=view)
-
 
 def run_discord():
     client.run(DISCORD_TOKEN)
