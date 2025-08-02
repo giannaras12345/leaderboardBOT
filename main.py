@@ -16,6 +16,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
 
 intents = discord.Intents.default()
+intents.message_content = True
 client = discord.Client(intents=intents)
 scraper = RTanksScraper()  # ✅ added
 
@@ -94,6 +95,21 @@ async def send_leaderboards():
         view = LeaderboardView(category, players)
         embed = view.get_embed(0)
         await channel.send(embed=embed, view=view)
+
+
+@client.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if message.content.strip().lower() == "!forceleaderboard":
+        channel = message.channel
+        all_data = scraper.scrape_all_categories()
+
+        for category, players in all_data.items():
+            view = LeaderboardView(category, players)
+            embed = view.get_embed(0)
+            await channel.send(embed=embed, view=view)
 
 
 def run_discord():
